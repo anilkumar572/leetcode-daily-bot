@@ -1,10 +1,10 @@
-# 🧩 LeetCode Daily Bot
+# LeetCode Daily Bot
 
 Sends you the LeetCode Daily Challenge every morning via email — with difficulty, tags, example test cases, and AI-generated hints (no spoilers).
 
 ---
 
-## 📦 What's inside
+## What's inside
 
 ```
 leetcode-daily-bot/
@@ -14,7 +14,7 @@ leetcode-daily-bot/
 
 ---
 
-## 🚀 Setup (5 minutes)
+## Setup (5 minutes)
 
 ### 1. Fork / push to GitHub
 Create a new GitHub repo and push this folder to it.
@@ -28,7 +28,7 @@ Create a new GitHub repo and push this folder to it.
 | `EMAIL_APP_PASSWORD` | Gmail → Settings → Security → **2-Step Verification ON** → **App Passwords** → create one for "Mail" |
 | `EMAIL_RECIPIENT` | Where you want to receive emails (can be same Gmail) |
 
-> ⚠️ Use an **App Password**, not your real Gmail password.
+> Use an **App Password**, not your real Gmail password.
 
 ### 3. Add GitHub Secrets
 
@@ -46,7 +46,7 @@ Go to the **Actions** tab in your repo and enable workflows if prompted.
 
 ---
 
-## ⏰ Schedule
+## Schedule
 
 The bot runs every day at **7:00 AM IST** automatically.
 
@@ -56,11 +56,11 @@ To test it manually: **Actions → LeetCode Daily Bot → Run workflow**
 
 ## ✉️ What the email looks like
 
-- 📌 Problem title + difficulty badge (color-coded)
-- 🏷️ Topic tags
-- 🔗 Direct link to problem
-- 🧪 Example test cases
-- 🧠 3 progressive AI hints (no code, no spoilers)
+- Problem title + difficulty badge (color-coded)
+- Topic tags
+- Direct link to problem
+- Example test cases
+- 3 progressive AI hints (no code, no spoilers)
 
 ---
 
