@@ -80,6 +80,12 @@ def generate_hints(problem):
     resp.raise_for_status()
     return resp.json()["choices"][0]["message"]["content"].strip()
 
+DIFFICULTY_COLOR = {
+    "Easy":   "#1EC677",
+    "Medium": "#F59E0B",
+    "Hard":   "#EF4444",
+}
+
 def build_email_html(problem, hints):
     diff_color = DIFFICULTY_COLOR.get(problem["difficulty"], "#6B7280")
 
