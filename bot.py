@@ -64,34 +64,21 @@ def generate_hints(problem):
         "Do NOT give the solution or pseudocode."
     )
 
-    gemini_key = os.environ["GEMINI_API_KEY"]
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        "gemini-2.0-flash:generateContent?key=" + gemini_key
+    resp = requests.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        json={
+            "model": "llama-3.3-70b-versatile",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 400,
+        },
+        headers={
+            "Authorization": "Bearer " + os.environ["GROQ_API_KEY"],
+            "Content-Type": "application/json",
+        },
+        timeout=30,
     )
-
-    for attempt in range(3):
-        resp = requests.post(
-            url,
-            json={"contents": [{"parts": [{"text": prompt}]}]},
-            headers={"Content-Type": "application/json"},
-            timeout=30,
-        )
-        if resp.status_code == 429:
-            print("Rate limited, retrying in 30s... (attempt " + str(attempt + 1) + ")")
-            time.sleep(30)
-            continue
-        resp.raise_for_status()
-        break
-
-    return resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-
-
-DIFFICULTY_COLOR = {
-    "Easy":   "#1EC677",
-    "Medium": "#F59E0B",
-    "Hard":   "#EF4444",
-}
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"].strip()
 
 def build_email_html(problem, hints):
     diff_color = DIFFICULTY_COLOR.get(problem["difficulty"], "#6B7280")
