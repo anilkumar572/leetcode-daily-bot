@@ -72,7 +72,7 @@ def generate_hints(problem):
             "max_tokens": 400,
         },
         headers={
-            "Authorization": "Bearer " + os.environ["GROQ_API_KEY"],
+            "Authorization": "Bearer " + os.environ["GEMINI_API_KEY"],
             "Content-Type": "application/json",
         },
         timeout=30,
