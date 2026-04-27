@@ -24,7 +24,7 @@ jobs:
 
       - name: Run bot
         env:
-          GEMINI_API_KEY:    ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY:    ${{ secrets.GROQ_API_KEY }}
           EMAIL_SENDER:      ${{ secrets.EMAIL_SENDER }}
           EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
           EMAIL_RECIPIENT:   ${{ secrets.EMAIL_RECIPIENT }}
