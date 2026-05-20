@@ -1,4 +1,4 @@
-# LeetCode Daily Bot
+# LeetCode Daily Bot 
 
 Sends you the LeetCode Daily Challenge every morning via email with difficulty, tags, example test cases, and AI-generated hints (no spoilers). Completely free to run.
 
