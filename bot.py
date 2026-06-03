@@ -346,38 +346,38 @@ def build_email_html(problem, analysis):
 
         "<tr><td style='background:#FFFFFF;padding:28px 32px;'>"
 
-        + stats_html +
+        + stats_html
 
-        "<h3 style='margin:0 0 10px;font-size:12px;color:#6B7280;letter-spacing:1px;'>TOPICS</h3>"
+        + "<h3 style='margin:0 0 10px;font-size:12px;color:#6B7280;letter-spacing:1px;'>TOPICS</h3>"
         "<div style='margin-bottom:24px;'>" + tags_html + "</div>"
 
-        "<h3 style='margin:0 0 10px;font-size:12px;color:#6B7280;letter-spacing:1px;'>PREREQUISITES</h3>"
+        + "<h3 style='margin:0 0 10px;font-size:12px;color:#6B7280;letter-spacing:1px;'>PREREQUISITES</h3>"
         "<div style='margin-bottom:24px;'>" + prereqs_html + "</div>"
 
-        "<a href='" + problem["link"] + "' style='display:inline-block;background:#0B53A0;color:white;"
+        + "<a href='" + problem["link"] + "' style='display:inline-block;background:#0B53A0;color:white;"
         "text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;"
         "font-size:15px;margin-bottom:28px;'>Open Problem &#8594;</a>"
 
-        "<h3 style='margin:0 0 10px;font-size:12px;color:#6B7280;letter-spacing:1px;'>EXAMPLE TEST CASES</h3>"
-        + examples_html +
+        + "<h3 style='margin:0 0 10px;font-size:12px;color:#6B7280;letter-spacing:1px;'>EXAMPLE TEST CASES</h3>"
+        + examples_html
 
-        "<hr style='border:none;border-top:1px solid #E5E7EB;margin:24px 0;'>"
+        + "<hr style='border:none;border-top:1px solid #E5E7EB;margin:24px 0;'>"
 
-        "<h2 style='margin:0 0 16px;font-size:16px;color:#1E293B;font-weight:700;'>&#129513; In-Depth Analysis</h2>"
+        + "<h2 style='margin:0 0 16px;font-size:16px;color:#1E293B;font-weight:700;'>&#129513; In-Depth Analysis</h2>"
 
-        + approach_html +
-        + complexity_html +
-        + pattern_html +
-        + pitfall_html +
+        + approach_html
+        + complexity_html
+        + pattern_html
+        + pitfall_html
 
-        "<hr style='border:none;border-top:1px solid #E5E7EB;margin:24px 0;'>"
+        + "<hr style='border:none;border-top:1px solid #E5E7EB;margin:24px 0;'>"
 
-        "<h3 style='margin:0 0 16px;font-size:12px;color:#6B7280;letter-spacing:1px;'>AI HINTS &#8212; NO SPOILERS</h3>"
-        + hints_html +
+        + "<h3 style='margin:0 0 16px;font-size:12px;color:#6B7280;letter-spacing:1px;'>AI HINTS &#8212; NO SPOILERS</h3>"
+        + hints_html
 
-        + similar_section +
+        + similar_section
 
-        "</td></tr>"
+        + "</td></tr>"
 
         "<tr><td style='background:#F8FAFC;border-radius:0 0 12px 12px;padding:16px 32px;"
         "border-top:1px solid #E5E7EB;text-align:center;'>"
