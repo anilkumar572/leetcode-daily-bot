@@ -140,6 +140,7 @@ def generate_ai_analysis(problem):
         "SPACE: <space complexity with brief reason>\n"
         "PATTERN: <the algorithmic pattern this represents>\n"
         "PITFALL: <one common mistake to avoid>\n"
+        "PSEUDOCODE: <4-7 lines of clean pseudocode showing the core logic, use | as line separator>\n"
         "HINT 1: <gentle nudge>\n"
         "HINT 2: <key insight>\n"
         "HINT 3: <how to structure the solution>\n"
@@ -150,7 +151,7 @@ def generate_ai_analysis(problem):
         json={
             "model": "llama-3.3-70b-versatile",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 600,
+            "max_tokens": 700,
         },
         headers={
             "Authorization": "Bearer " + os.environ["GROQ_API_KEY"],
@@ -170,12 +171,13 @@ def generate_ai_analysis(problem):
     hints = [fields.get("HINT 1", ""), fields.get("HINT 2", ""), fields.get("HINT 3", "")]
 
     return {
-        "approach":  fields.get("APPROACH", ""),
-        "time":      fields.get("TIME", ""),
-        "space":     fields.get("SPACE", ""),
-        "pattern":   fields.get("PATTERN", ""),
-        "pitfall":   fields.get("PITFALL", ""),
-        "hints":     [h for h in hints if h],
+        "approach":    fields.get("APPROACH", ""),
+        "time":        fields.get("TIME", ""),
+        "space":       fields.get("SPACE", ""),
+        "pattern":     fields.get("PATTERN", ""),
+        "pitfall":     fields.get("PITFALL", ""),
+        "pseudocode":  fields.get("PSEUDOCODE", ""),
+        "hints":       [h for h in hints if h],
     }
 
 
@@ -185,12 +187,6 @@ DIFFICULTY_COLOR = {
     "Hard":   "#EF4444",
 }
 
-DIFFICULTY_BG = {
-    "Easy":   "rgba(30,198,119,0.12)",
-    "Medium": "rgba(245,158,11,0.12)",
-    "Hard":   "rgba(239,68,68,0.12)",
-}
-
 
 def build_email_html(problem, analysis):
     diff_color = DIFFICULTY_COLOR.get(problem["difficulty"], "#6B7280")
@@ -198,190 +194,252 @@ def build_email_html(problem, analysis):
     date_fmt = datetime.strptime(problem["date"], "%Y-%m-%d").strftime("%B %d, %Y")
     stats = problem["stats"]
 
+    # --- tags ---
     tags_html = ""
     for t in problem["tags"]:
         tags_html += (
             "<span style='display:inline-block;background:#EFF6FF;color:#1D4ED8;"
-            "border-radius:20px;padding:3px 12px;font-size:12px;margin:3px 4px 3px 0;'>"
-            + t + "</span>"
+            "border-radius:20px;padding:4px 13px;font-size:12px;font-weight:600;"
+            "margin:3px 4px 3px 0;'>" + t + "</span>"
         )
 
-    ac_rate = stats.get("acRate", "N/A")
+    # --- stats row ---
+    ac_rate  = stats.get("acRate", "N/A")
     total_ac = stats.get("totalAccepted", "N/A")
     total_sub = stats.get("totalSubmission", "N/A")
 
+    def stat_cell(label, value):
+        return (
+            "<td style='text-align:center;background:#F8FAFC;border-radius:8px;"
+            "padding:14px 8px;border:1px solid #E5E7EB;'>"
+            "<p style='margin:0;font-size:11px;color:#9CA3AF;letter-spacing:1px;text-transform:uppercase;'>" + label + "</p>"
+            "<p style='margin:6px 0 0;font-size:20px;font-weight:700;color:#1E293B;'>" + str(value) + "</p>"
+            "</td>"
+        )
+
     stats_html = (
-        "<table cellpadding='0' cellspacing='0' width='100%' style='margin:0 0 24px;'><tr>"
-        + "<td style='text-align:center;background:#F8FAFC;border-radius:8px;padding:12px 8px;border:1px solid #E5E7EB;'>"
-        + "<p style='margin:0;font-size:11px;color:#9CA3AF;letter-spacing:1px;'>AC Rate</p>"
-        + "<p style='margin:4px 0 0;font-size:18px;font-weight:700;color:#1E293B;'>" + str(ac_rate) + "</p></td>"
-        + "<td style='width:8px;'></td>"
-        + "<td style='text-align:center;background:#F8FAFC;border-radius:8px;padding:12px 8px;border:1px solid #E5E7EB;'>"
-        + "<p style='margin:0;font-size:11px;color:#9CA3AF;letter-spacing:1px;'>Accepted</p>"
-        + "<p style='margin:4px 0 0;font-size:18px;font-weight:700;color:#1E293B;'>" + str(total_ac) + "</p></td>"
-        + "<td style='width:8px;'></td>"
-        + "<td style='text-align:center;background:#F8FAFC;border-radius:8px;padding:12px 8px;border:1px solid #E5E7EB;'>"
-        + "<p style='margin:0;font-size:11px;color:#9CA3AF;letter-spacing:1px;'>Submissions</p>"
-        + "<p style='margin:4px 0 0;font-size:18px;font-weight:700;color:#1E293B;'>" + str(total_sub) + "</p></td>"
+        "<table cellpadding='0' cellspacing='0' width='100%' style='margin:0 0 20px;border-collapse:separate;border-spacing:8px 0;'><tr>"
+        + stat_cell("AC Rate", ac_rate)
+        + stat_cell("Accepted", total_ac)
+        + stat_cell("Submissions", total_sub)
         + "</tr></table>"
     )
 
+    # --- examples ---
     examples_html = ""
     for i, ex in enumerate(problem["examples"], 1):
         examples_html += (
             "<div style='background:#F8FAFC;border-left:3px solid #CBD5E1;"
-            "padding:10px 14px;margin:8px 0;border-radius:0 6px 6px 0;"
+            "padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0;"
             "font-family:monospace;font-size:13px;color:#374151;'>"
             "<strong>Case " + str(i) + ":</strong> " + ex + "</div>"
         )
 
+    # --- prerequisites ---
     prereqs_html = ""
     if prereqs:
         for p in prereqs:
             prereqs_html += (
                 "<span style='display:inline-block;background:#FEF3C7;color:#92400E;"
-                "border-radius:6px;padding:4px 10px;font-size:12px;margin:3px 4px 3px 0;'>"
-                "&#10003; " + p + "</span>"
+                "border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;"
+                "margin:3px 4px 3px 0;'>&#10003; " + p + "</span>"
             )
     else:
         prereqs_html = "<span style='color:#9CA3AF;font-size:13px;'>No specific prerequisites.</span>"
 
+    # --- approach ---
     approach_html = ""
     if analysis.get("approach"):
         approach_html = (
-            "<div style='background:#F0F9FF;border-radius:8px;padding:16px 20px;margin:0 0 16px;'>"
+            "<div style='background:#F0F9FF;border-radius:8px;padding:14px 18px;margin:0 0 12px;'>"
             "<p style='margin:0;color:#0C4A6E;font-size:14px;line-height:1.7;'>"
             + analysis["approach"] + "</p></div>"
         )
 
+    # --- complexity ---
     complexity_html = ""
     if analysis.get("time") or analysis.get("space"):
         complexity_html = (
-            "<table cellpadding='0' cellspacing='0' width='100%' style='margin:0 0 20px;'><tr>"
-            + "<td style='background:#EFF6FF;border-radius:8px;padding:12px 14px;vertical-align:top;border:1px solid rgba(0,0,0,0.04);'>"
-            + "<p style='margin:0;font-size:11px;color:#1D4ED8;font-weight:700;letter-spacing:1px;'>&#9201; Time</p>"
-            + "<p style='margin:4px 0 0;font-size:13px;color:#1E293B;line-height:1.5;'>" + analysis.get("time", "N/A") + "</p></td>"
-            + "<td style='width:8px;'></td>"
-            + "<td style='background:#F0FDF4;border-radius:8px;padding:12px 14px;vertical-align:top;border:1px solid rgba(0,0,0,0.04);'>"
-            + "<p style='margin:0;font-size:11px;color:#166534;font-weight:700;letter-spacing:1px;'>&#129504; Space</p>"
-            + "<p style='margin:4px 0 0;font-size:13px;color:#1E293B;line-height:1.5;'>" + analysis.get("space", "N/A") + "</p></td>"
-            + "</tr></table>"
+            "<table cellpadding='0' cellspacing='0' width='100%' style='margin:0 0 12px;border-collapse:separate;border-spacing:8px 0;'><tr>"
+            "<td style='background:#EFF6FF;border-radius:8px;padding:12px 14px;vertical-align:top;border:1px solid #DBEAFE;'>"
+            "<p style='margin:0;font-size:11px;color:#1D4ED8;font-weight:700;letter-spacing:1px;'>TIME</p>"
+            "<p style='margin:4px 0 0;font-size:13px;color:#1E293B;line-height:1.5;'>" + analysis.get("time", "N/A") + "</p></td>"
+            "<td style='background:#F0FDF4;border-radius:8px;padding:12px 14px;vertical-align:top;border:1px solid #BBF7D0;'>"
+            "<p style='margin:0;font-size:11px;color:#166534;font-weight:700;letter-spacing:1px;'>SPACE</p>"
+            "<p style='margin:4px 0 0;font-size:13px;color:#1E293B;line-height:1.5;'>" + analysis.get("space", "N/A") + "</p></td>"
+            "</tr></table>"
         )
 
+    # --- pattern ---
     pattern_html = ""
     if analysis.get("pattern"):
         pattern_html = (
-            "<div style='display:flex;align-items:center;gap:10px;margin:0 0 20px;"
-            "background:#FAF5FF;border-radius:8px;padding:12px 16px;'>"
-            "<span style='font-size:18px;'>&#128260;</span>"
-            "<div><p style='margin:0;font-size:11px;color:#7C3AED;font-weight:700;"
-            "letter-spacing:1px;'>ALGORITHMIC PATTERN</p>"
-            "<p style='margin:2px 0 0;font-size:14px;color:#4C1D95;font-weight:600;'>"
-            + analysis["pattern"] + "</p></div></div>"
+            "<table cellpadding='0' cellspacing='0' width='100%' style='margin:0 0 12px;'><tr>"
+            "<td style='background:#FAF5FF;border-radius:8px;padding:12px 16px;border:1px solid #E9D5FF;'>"
+            "<p style='margin:0;font-size:11px;color:#7C3AED;font-weight:700;letter-spacing:1px;'>ALGORITHMIC PATTERN</p>"
+            "<p style='margin:4px 0 0;font-size:14px;color:#4C1D95;font-weight:600;'>" + analysis["pattern"] + "</p>"
+            "</td></tr></table>"
         )
 
+    # --- pitfall ---
     pitfall_html = ""
     if analysis.get("pitfall"):
         pitfall_html = (
-            "<div style='display:flex;align-items:flex-start;gap:10px;margin:0 0 20px;"
-            "background:#FFF7ED;border-radius:8px;padding:12px 16px;'>"
-            "<span style='font-size:18px;'>&#9888;&#65039;</span>"
-            "<div><p style='margin:0;font-size:11px;color:#C2410C;font-weight:700;"
-            "letter-spacing:1px;'>COMMON PITFALL</p>"
-            "<p style='margin:4px 0 0;font-size:13px;color:#7C2D12;line-height:1.6;'>"
-            + analysis["pitfall"] + "</p></div></div>"
+            "<table cellpadding='0' cellspacing='0' width='100%' style='margin:0 0 12px;'><tr>"
+            "<td style='background:#FFF7ED;border-radius:8px;padding:12px 16px;border:1px solid #FED7AA;'>"
+            "<p style='margin:0;font-size:11px;color:#C2410C;font-weight:700;letter-spacing:1px;'>COMMON PITFALL</p>"
+            "<p style='margin:4px 0 0;font-size:13px;color:#7C2D12;line-height:1.6;'>" + analysis["pitfall"] + "</p>"
+            "</td></tr></table>"
         )
 
+    # --- pseudocode ---
+    pseudocode_html = ""
+    if analysis.get("pseudocode"):
+        lines = analysis["pseudocode"].split("|")
+        lines_html = ""
+        for ln in lines:
+            ln = ln.strip()
+            if ln:
+                lines_html += (
+                    "<div style='padding:3px 0;color:#E2E8F0;font-family:monospace;font-size:13px;line-height:1.6;'>"
+                    + ln + "</div>"
+                )
+        pseudocode_html = (
+            "<table cellpadding='0' cellspacing='0' width='100%' style='margin:0 0 12px;'><tr>"
+            "<td style='background:#1E293B;border-radius:8px;padding:16px 20px;'>"
+            "<p style='margin:0 0 10px;font-size:11px;color:#64748B;font-weight:700;letter-spacing:1px;'>PSEUDOCODE</p>"
+            + lines_html +
+            "</td></tr></table>"
+        )
+
+    # --- hints ---
     hints_html = ""
     for i, hint in enumerate(analysis.get("hints", []), 1):
         hints_html += (
-            "<div style='display:flex;gap:12px;align-items:flex-start;margin:12px 0;'>"
-            "<div style='min-width:28px;height:28px;background:#0B53A0;color:white;"
+            "<table cellpadding='0' cellspacing='0' width='100%' style='margin:0 0 10px;'><tr>"
+            "<td style='width:32px;vertical-align:top;padding-top:2px;'>"
+            "<div style='width:28px;height:28px;background:#0B53A0;color:white;"
             "border-radius:50%;text-align:center;line-height:28px;font-size:12px;font-weight:700;'>"
-            + str(i) +
-            "</div>"
+            + str(i) + "</div></td>"
+            "<td style='padding-left:10px;vertical-align:top;'>"
             "<p style='margin:4px 0;color:#374151;font-size:14px;line-height:1.6;'>" + hint + "</p>"
-            "</div>"
+            "</td></tr></table>"
         )
 
+    # --- similar questions ---
     similar_html = ""
     for sq in problem.get("similar_questions", []):
         sq_diff = sq.get("difficulty", "")
         sq_color = DIFFICULTY_COLOR.get(sq_diff, "#6B7280")
         similar_html += (
-            "<div style='display:flex;justify-content:space-between;align-items:center;"
-            "padding:8px 0;border-bottom:1px solid #F1F5F9;'>"
-            "<span style='font-size:13px;color:#374151;'>" + sq.get("title", "") + "</span>"
-            "<span style='font-size:11px;font-weight:700;color:" + sq_color + ";'>"
-            + sq_diff + "</span></div>"
+            "<table cellpadding='0' cellspacing='0' width='100%' style='margin:0;'><tr>"
+            "<td style='padding:8px 0;border-bottom:1px solid #F1F5F9;font-size:13px;color:#374151;'>" + sq.get("title", "") + "</td>"
+            "<td style='padding:8px 0;border-bottom:1px solid #F1F5F9;text-align:right;font-size:11px;font-weight:700;color:" + sq_color + ";'>" + sq_diff + "</td>"
+            "</tr></table>"
         )
 
     similar_section = ""
     if similar_html:
         similar_section = (
-            "<hr style='border:none;border-top:1px solid #E5E7EB;margin:24px 0;'>"
-            "<h3 style='margin:0 0 12px;font-size:13px;color:#6B7280;letter-spacing:1px;'>SIMILAR PROBLEMS</h3>"
-            + similar_html
+            "<tr><td style='padding:0 32px 4px;'>"
+            "<hr style='border:none;border-top:1px solid #E5E7EB;margin:0 0 16px;'>"
+            "<p style='margin:0 0 10px;font-size:12px;color:#6B7280;font-weight:700;letter-spacing:1px;'>SIMILAR PROBLEMS</p>"
+            + similar_html +
+            "</td></tr>"
         )
 
+    # --- full html ---
     html = (
         "<!DOCTYPE html><html><head><meta charset='UTF-8'></head>"
         "<body style='margin:0;padding:0;background:#F1F5F9;font-family:Arial,sans-serif;'>"
         "<table width='100%' cellpadding='0' cellspacing='0' style='background:#F1F5F9;padding:32px 16px;'>"
         "<tr><td align='center'>"
-        "<table width='600' cellpadding='0' cellspacing='0' style='max-width:600px;width:100%;'>"
+        "<table width='600' cellpadding='0' cellspacing='0' style='max-width:600px;width:100%;background:#FFFFFF;border-radius:12px;overflow:hidden;'>"
 
-        "<tr><td style='background:#0B53A0;border-radius:12px 12px 0 0;padding:28px 32px;'>"
-        "<p style='margin:0;color:#93C5FD;font-size:11px;letter-spacing:2px;'>DAILY CHALLENGE &#183; " + date_fmt + "</p>"
-        "<div style='display:flex;align-items:baseline;gap:10px;margin-top:6px;'>"
-        "<span style='background:rgba(255,255,255,0.15);color:#E0F2FE;border-radius:6px;"
-        "padding:2px 10px;font-size:13px;font-weight:700;'>#" + str(problem["question_id"]) + "</span>"
-        "<h1 style='margin:0;color:#FFFFFF;font-size:22px;font-weight:700;'>" + problem["title"] + "</h1>"
-        "</div>"
-        "<div style='margin-top:12px;display:flex;gap:8px;align-items:center;'>"
+        # header
+        "<tr><td style='background:#0B53A0;padding:28px 32px;'>"
+        "<p style='margin:0 0 8px;color:#93C5FD;font-size:11px;letter-spacing:2px;'>DAILY CHALLENGE &middot; " + date_fmt + "</p>"
+        "<table cellpadding='0' cellspacing='0'><tr>"
+        "<td style='vertical-align:middle;padding-right:10px;'>"
+        "<span style='display:inline-block;background:rgba(255,255,255,0.18);color:#E0F2FE;"
+        "border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;white-space:nowrap;'>#" + str(problem["question_id"]) + "</span>"
+        "</td>"
+        "<td style='vertical-align:middle;'>"
+        "<span style='color:#FFFFFF;font-size:20px;font-weight:700;line-height:1.3;'>" + problem["title"] + "</span>"
+        "</td></tr></table>"
+        "<div style='margin-top:14px;'>"
         "<span style='background:" + diff_color + ";color:white;padding:4px 14px;"
-        "border-radius:20px;font-size:12px;font-weight:700;'>" + problem["difficulty"] + "</span>"
+        "border-radius:20px;font-size:12px;font-weight:700;display:inline-block;'>" + problem["difficulty"] + "</span>"
         "</div>"
         "</td></tr>"
 
-        "<tr><td style='background:#FFFFFF;padding:28px 32px;'>"
+        # stats
+        "<tr><td style='padding:24px 32px 0;'>" + stats_html + "</td></tr>"
 
-        + stats_html
+        # topics
+        "<tr><td style='padding:0 32px 0;'>"
+        "<p style='margin:0 0 8px;font-size:12px;color:#6B7280;font-weight:700;letter-spacing:1px;'>TOPICS</p>"
+        "<div style='margin-bottom:20px;'>" + tags_html + "</div>"
+        "</td></tr>"
 
-        + "<h3 style='margin:0 0 10px;font-size:12px;color:#6B7280;letter-spacing:1px;'>TOPICS</h3>"
-        "<div style='margin-bottom:24px;'>" + tags_html + "</div>"
+        # prerequisites
+        "<tr><td style='padding:0 32px 0;'>"
+        "<p style='margin:0 0 8px;font-size:12px;color:#6B7280;font-weight:700;letter-spacing:1px;'>PREREQUISITES</p>"
+        "<div style='margin-bottom:20px;'>" + prereqs_html + "</div>"
+        "</td></tr>"
 
-        + "<h3 style='margin:0 0 10px;font-size:12px;color:#6B7280;letter-spacing:1px;'>PREREQUISITES</h3>"
-        "<div style='margin-bottom:24px;'>" + prereqs_html + "</div>"
+        # open problem button
+        "<tr><td style='padding:0 32px 20px;'>"
+        "<a href='" + problem["link"] + "' style='display:inline-block;background:#0B53A0;color:white;"
+        "text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;'>Open Problem &rarr;</a>"
+        "</td></tr>"
 
-        + "<a href='" + problem["link"] + "' style='display:inline-block;background:#0B53A0;color:white;"
-        "text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;"
-        "font-size:15px;margin-bottom:28px;'>Open Problem &#8594;</a>"
+        # divider
+        "<tr><td style='padding:0 32px;'><hr style='border:none;border-top:1px solid #E5E7EB;margin:0 0 20px;'></td></tr>"
 
-        + "<h3 style='margin:0 0 10px;font-size:12px;color:#6B7280;letter-spacing:1px;'>EXAMPLE TEST CASES</h3>"
-        + examples_html
+        # example test cases
+        "<tr><td style='padding:0 32px 4px;'>"
+        "<p style='margin:0 0 8px;font-size:12px;color:#6B7280;font-weight:700;letter-spacing:1px;'>EXAMPLE TEST CASES</p>"
+        + examples_html +
+        "</td></tr>"
 
-        + "<hr style='border:none;border-top:1px solid #E5E7EB;margin:24px 0;'>"
+        # divider
+        "<tr><td style='padding:0 32px;'><hr style='border:none;border-top:1px solid #E5E7EB;margin:16px 0;'></td></tr>"
 
-        + "<h2 style='margin:0 0 16px;font-size:16px;color:#1E293B;font-weight:700;'>&#129513; In-Depth Analysis</h2>"
+        # analysis heading
+        "<tr><td style='padding:0 32px 12px;'>"
+        "<p style='margin:0;font-size:16px;color:#1E293B;font-weight:700;'>In-Depth Analysis</p>"
+        "</td></tr>"
 
-        + approach_html
-        + complexity_html
-        + pattern_html
-        + pitfall_html
+        # approach
+        "<tr><td style='padding:0 32px 4px;'>" + approach_html + "</td></tr>"
 
-        + "<hr style='border:none;border-top:1px solid #E5E7EB;margin:24px 0;'>"
+        # complexity
+        "<tr><td style='padding:0 32px 4px;'>" + complexity_html + "</td></tr>"
 
-        + "<h3 style='margin:0 0 16px;font-size:12px;color:#6B7280;letter-spacing:1px;'>AI HINTS &#8212; NO SPOILERS</h3>"
-        + hints_html
+        # pattern
+        "<tr><td style='padding:0 32px 4px;'>" + pattern_html + "</td></tr>"
 
-        + similar_section
+        # pitfall
+        "<tr><td style='padding:0 32px 4px;'>" + pitfall_html + "</td></tr>"
 
-        + "</td></tr>"
+        # pseudocode
+        "<tr><td style='padding:0 32px 4px;'>" + pseudocode_html + "</td></tr>"
 
-        "<tr><td style='background:#F8FAFC;border-radius:0 0 12px 12px;padding:16px 32px;"
-        "border-top:1px solid #E5E7EB;text-align:center;'>"
-        "<p style='margin:0;font-size:12px;color:#9CA3AF;'>LeetCode Daily Bot &#183; FAANG Prep &#183; " + date_fmt + "</p>"
+        # divider
+        "<tr><td style='padding:0 32px;'><hr style='border:none;border-top:1px solid #E5E7EB;margin:12px 0;'></td></tr>"
+
+        # hints
+        "<tr><td style='padding:0 32px 16px;'>"
+        "<p style='margin:0 0 12px;font-size:12px;color:#6B7280;font-weight:700;letter-spacing:1px;'>AI HINTS &mdash; NO SPOILERS</p>"
+        + hints_html +
+        "</td></tr>"
+
+        + similar_section +
+
+        # footer
+        "<tr><td style='background:#F8FAFC;border-top:1px solid #E5E7EB;padding:14px 32px;text-align:center;'>"
+        "<p style='margin:0;font-size:12px;color:#9CA3AF;'>LeetCode Daily Bot &middot; FAANG Prep &middot; " + date_fmt + "</p>"
         "</td></tr>"
 
         "</table></td></tr></table>"
