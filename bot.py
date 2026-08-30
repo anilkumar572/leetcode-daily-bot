@@ -114,6 +114,7 @@ PREREQ_MAP = {
     "Interactive":            ["Binary search on hidden value", "Query budgeting", "Adaptive strategy"],
 }
 
+
 def get_prerequisites(tags):
     seen = set()
     prereqs = []
@@ -146,21 +147,63 @@ def generate_ai_analysis(problem):
         "HINT 3: <how to structure the solution>\n"
     )
 
-    resp = requests.post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        json={
-            "model": "llama-3.3-70b-versatile",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 700,
-        },
-        headers={
-            "Authorization": "Bearer " + os.environ["GROQ_API_KEY"],
-            "Content-Type": "application/json",
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    raw = resp.json()["choices"][0]["message"]["content"].strip()
+    default_analysis = {
+        "approach": "AI analysis not available.",
+        "time": "N/A",
+        "space": "N/A",
+        "pattern": "N/A",
+        "pitfall": "N/A",
+        "pseudocode": "",
+        "hints": [],
+    }
+
+    # Try OpenAI if an OpenAI API key is provided, otherwise try GROQ; on any error return default.
+    try:
+        if "OPENAI_API_KEY" in os.environ:
+            url = "https://api.openai.com/v1/chat/completions"
+            headers = {
+                "Authorization": "Bearer " + os.environ["OPENAI_API_KEY"],
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 700,
+            }
+        elif "GROQ_API_KEY" in os.environ:
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            headers = {
+                "Authorization": "Bearer " + os.environ["GROQ_API_KEY"],
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 700,
+            }
+        else:
+            print("No AI API key found; skipping AI analysis.")
+            return default_analysis
+
+        resp = requests.post(url, json=payload, headers=headers, timeout=30)
+        resp.raise_for_status()
+        body = resp.json()
+
+        # Safe extraction
+        raw = ""
+        if isinstance(body, dict) and "choices" in body and len(body["choices"]) > 0:
+            msg = body["choices"][0].get("message") or body["choices"][0]
+            raw = (msg.get("content") if isinstance(msg, dict) else None) or msg.get("text") if isinstance(msg, dict) else ""
+            if not raw and isinstance(body["choices"][0], dict):
+                # fallback for non-chat completions
+                raw = body["choices"][0].get("text", "")
+        raw = raw.strip()
+        if not raw:
+            print("AI provider returned empty response; falling back to default analysis.")
+            return default_analysis
+    except Exception as e:
+        print("generate_ai_analysis: AI request failed:", str(e))
+        return default_analysis
 
     fields = {}
     for line in raw.split("\n"):
@@ -171,12 +214,12 @@ def generate_ai_analysis(problem):
     hints = [fields.get("HINT 1", ""), fields.get("HINT 2", ""), fields.get("HINT 3", "")]
 
     return {
-        "approach":    fields.get("APPROACH", ""),
-        "time":        fields.get("TIME", ""),
-        "space":       fields.get("SPACE", ""),
-        "pattern":     fields.get("PATTERN", ""),
-        "pitfall":     fields.get("PITFALL", ""),
-        "pseudocode":  fields.get("PSEUDOCODE", ""),
+        "approach":    fields.get("APPROACH", default_analysis["approach"]),
+        "time":        fields.get("TIME", default_analysis["time"]),
+        "space":       fields.get("SPACE", default_analysis["space"]),
+        "pattern":     fields.get("PATTERN", default_analysis["pattern"]),
+        "pitfall":     fields.get("PITFALL", default_analysis["pitfall"]),
+        "pseudocode":  fields.get("PSEUDOCODE", default_analysis["pseudocode"]),
         "hints":       [h for h in hints if h],
     }
 
